@@ -6,46 +6,45 @@ app = Flask(__name__)
 
 # ==================================================
 # BASE DE LICENCES (exemple)
-# clé -> expiration + machine liée
 # ==================================================
 LICENCES = {
     "SVT-2026-TEST-0001": {"exp": "2027-12-31", "machine": None},
-    "SVT-2026-TEST-0002": {"exp": "2027-12-31", "machine": None},
+    "SVT-2026-TEST-0002": {"exp": "2027-12-31", "machine": None}
 }
 
 # ==================================================
 @app.route("/")
 def home():
-    return "Serveur d’activation actif ✅"
+    return "Activation server running"
 
 # ==================================================
 @app.route("/activate", methods=["POST"])
 def activate():
     data = request.get_json(silent=True)
     if not data:
-        return jsonify(ok=False, message="Requête invalide")
+        return jsonify(ok=False, message="Invalid request")
 
     key = data.get("key")
     machine = data.get("machine")
 
     if not key or not machine:
-        return jsonify(ok=False, message="Clé ou machine manquante")
+        return jsonify(ok=False, message="Missing key or machine")
 
     licence = LICENCES.get(key)
     if not licence:
-        return jsonify(ok=False, message="Clé invalide")
+        return jsonify(ok=False, message="Invalid license key")
 
     if date.today() > date.fromisoformat(licence["exp"]):
-        return jsonify(ok=False, message="Clé expirée")
+        return jsonify(ok=False, message="License expired")
 
     if licence["machine"] is None:
         licence["machine"] = machine
-        return jsonify(ok=True, message="Activation réussie ✅")
+        return jsonify(ok=True, message="Activation successful")
 
     if licence["machine"] != machine:
-        return jsonify(ok=False, message="Clé déjà utilisée sur un autre PC")
+        return jsonify(ok=False, message="Key already used on another machine")
 
-    return jsonify(ok=True, message="Licence déjà active sur ce PC")
+    return jsonify(ok=True, message="License already active on this machine")
 
 # ==================================================
 @app.route("/verify")
@@ -69,4 +68,3 @@ def verify():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
-``
