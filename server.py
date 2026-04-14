@@ -1,48 +1,45 @@
 from flask import Flask, request, jsonify
-import hashlib
 from datetime import date
+import os
 
 app = Flask(__name__)
 
-# ==========================
-# CONFIG LICENCES
-# ==========================
-SALT = "SVT_BAC_2026"
-
-# Licences autorisées (exemple)
-# machine_hash : date_expiration
+# ==================================================
+# LICENCES AUTORISÉES
+# ==================================================
 LICENCES = {
-    # Exemple de machine autorisée
-    # "hash_machine": "2027-12-31"
+    # ✅ REMPLACE CETTE VALEUR PAR LE HASH DE TON PC
+    "COLLE_ICI_LE_HASH_DE_TA_MACHINE": "2027-12-31"
 }
 
-# ==========================
-# OUTILS
-# ==========================
-def hash_text(txt):
-    return hashlib.sha256((SALT + txt).encode()).hexdigest()
+# ==================================================
+# ROUTES
+# ==================================================
+@app.route("/")
+def home():
+    return "Serveur de licence actif ✅"
 
-def licence_valide(machine):
-    today = date.today()
-    exp = LICENCES.get(machine)
-    if not exp:
-        return False, "Machine non autorisée"
-    try:
-        exp_date = date.fromisoformat(exp)
-        if today > exp_date:
-            return False, "Licence expirée"
-        return True, "Licence valide"
-    except ValueError:
-        return False, "Licence corrompue"
-
-# ==========================
-# ROUTE DE VÉRIFICATION
-# ==========================
 @app.route("/verify")
 def verify():
-    machine = request.args.get("machine", "")
-    app_name = request.args.get("app", "")
+    machine = request.args.get("machine")
+    app_name = request.args.get("app")
 
     if not machine or not app_name:
         return jsonify(valid=False, message="Requête invalide")
 
+    exp = LICENCES.get(machine)
+    if not exp:
+        return jsonify(valid=False, message="Machine non autorisée")
+
+    if date.today() > date.fromisoformat(exp):
+        return jsonify(valid=False, message="Licence expirée")
+
+    return jsonify(valid=True, message="Licence valide")
+
+# ==================================================
+# LANCEMENT (OBLIGATOIRE POUR RAILWAY)
+# ==================================================
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 3000))
+    app.run(host="0.0.0.0", port=port)
+``
